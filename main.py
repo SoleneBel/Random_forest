@@ -13,8 +13,8 @@ from sklearn.decomposition import PCA
 # Chemins des dossiers
 base_path = "./dataTest/"
 target_path = "target.jpg"
-folders = ["desert", "cloudy", "green_area", "water"]
-label_map = {folder: idx for idx, folder in enumerate(folders)}
+categories = [folder for folder in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, folder))]
+label_map = {category: idx for idx, category in enumerate(categories)}
 
 # Fonctions de descripteurs
 def extract_contour_features(image):
@@ -31,11 +31,19 @@ def extract_texture_features(image):
 	hist = cv2.calcHist([image], [0], None, [64], [0, 256])
 	return hist.flatten()
 
+# Altérer l'image
+def alter_image(image):
+	# Appliquer une rotation de 90 degrés
+	rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+
+	# Redimensionner pour maintenir la taille d'origine sans bords noirs
+	return cv2.resize(rotated_image, (image.shape[1], image.shape[0]))
+
 # Préparation du dataset
 features = []
 labels = []
-for folder in folders:
-	folder_path = os.path.join(base_path, folder)
+for category in categories:
+	folder_path = os.path.join(base_path, category)
 	for file_name in os.listdir(folder_path):
 		image_path = os.path.join(folder_path, file_name)
 		image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -46,7 +54,7 @@ for folder in folders:
 		texture_features = extract_texture_features(image)
 		combined_features = np.concatenate([contour_features, frequency_features, texture_features])
 		features.append(combined_features)
-		labels.append(label_map[folder])
+		labels.append(label_map[category])
 
 # Conversion en matrice et normalisation
 X = np.array(features)
@@ -72,6 +80,8 @@ report = classification_report(y_test, y_pred)
 def predict_image_category(image_path):
 	# Charger l'image
 	image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+	image = alter_image(image)
+ 
 	if image is None:
 		print("Erreur : l'image n'a pas pu être chargée.")
 		return
@@ -95,7 +105,6 @@ def predict_image_category(image_path):
 
 # Exemple d'utilisation avec le chemin de la nouvelle image
 predict_image_category(target_path)
-
 
 # Affichage des résultats
 print("Matrice de confusion:\n", cm)
