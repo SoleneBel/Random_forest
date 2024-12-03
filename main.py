@@ -9,6 +9,7 @@ from skimage import filters
 from skimage.feature import graycomatrix, graycoprops
 from scipy.fftpack import fft2
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -17,8 +18,8 @@ from PIL import Image, ImageDraw
 
 # Constantes #
 # Chemins des dossiers/fichiers
-BASE_PATH = "../dataTest/"
-TARGET_PATH = "../target1.jpg"
+BASE_PATH = "./dataTest/"
+TARGET_PATH = "target.jpg"
 # On récupère les différentes catégories d'images à partir des noms des dossiers où elles sont stockées
 CATEGORIES = [folder for folder in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, folder))]
 LABEL_MAP = {category: idx for idx, category in enumerate(CATEGORIES)}
@@ -26,6 +27,11 @@ LABEL_MAP = {category: idx for idx, category in enumerate(CATEGORIES)}
 
 # Fonctions de descripteurs #
 def extract_contour_features(image):
+	"""
+	Donne des caractéristiques sur l'image en fonction des contours.
+	:param image: Image à traiter.
+	:return: Les caractéristiques de contour.
+	"""
 	# Version Sobel
 	edges = filters.sobel(image)
 	return cv2.resize(edges, (64, 64)).flatten()  # Fixe la taille
@@ -40,25 +46,40 @@ def extract_contour_features(image):
 
 
 def extract_frequency_features(image):
-	f_transform = np.abs(fft2(image))
-	f_transform = np.log(f_transform + 1)  # Log pour réduire l'échelle
+	"""
+	Donne des caractéristiques sur l'image en fonction des fréquences.
+	:param image: Image à traiter.
+	:return: Les caractéristiques de fréquence.
+	"""
+	f_transform = np.abs(fft2(image)) # Transformation de Fourier
+	f_transform = np.log(f_transform + 1)  # Log pour réduire l'échelle (données concentrées en un point sans ça)
 	f_transform_resized = cv2.resize(f_transform, (32, 32))
 	return f_transform_resized.flatten()  # Fixe la taille
 
 
 def extract_texture_features(image):
-	hist = cv2.calcHist([image], [0], None, [128], [0, 256])
+	"""
+	Donne des caractéristiques sur l'image en fonction des textures.
+	:param image: Image à traiter.
+	:return: Les caractéristiques de texture.
+	"""
+	hist = cv2.calcHist([image], [0], None, [128], [0, 256]) # Histogramme HSV
 	return hist.flatten()
 
 
 def extract_glcm_features(image):
+	"""
+	Donne des caractéristiques sur l'image en fonction des matrices de coocurrences.
+	:param image: Image à traiter.
+	:return: Les caractéristiques GLCM.
+	"""
 	image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
 	# Calculer la matrice GLCM
 	glcm = graycomatrix(
 		image,
 		distances=[1],  # Distance entre les pixels
-		angles=[0],  # Angles : 0°, 45°, 90°, 135°
+		angles=[0],  # Angles : 0°
 		levels=256,  # Niveaux de gris
 		symmetric=True,
 		normed=True
@@ -68,7 +89,7 @@ def extract_glcm_features(image):
 	features = []
 	properties = ['contrast', 'homogeneity', 'energy', 'correlation']
 	for prop in properties:
-		props = graycoprops(glcm, prop)
+		props = graycoprops(glcm, prop)	# Récupérer les valeurs des propriétés
 		features.extend(props.flatten())  # Ajouter les valeurs de chaque angle
 
 	return np.array(features)
@@ -76,6 +97,11 @@ def extract_glcm_features(image):
 
 # Altérer image #
 def alter_image(image):
+	"""
+	Applique des modifications sur l'image donnée
+	:param image: Image à modifier
+	:return: Image modifiée
+	"""
 	# Appliquer une rotation de 90 degrés
 	rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
@@ -85,20 +111,31 @@ def alter_image(image):
 
 # Random Forest #
 def random_forest():
+	"""
+	Génère et fournit des données Random Forest
+
+	:return: scaler, pca, clf, cm, report
+	"""
 	features = []
 	labels = []
 	for category in CATEGORIES:
 		folder_path = os.path.join(BASE_PATH, category)
 		for file_name in os.listdir(folder_path):
+
+				# Ouverture des images 
 				image_path = os.path.join(folder_path, file_name)
 				image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 				if image is None:
 					continue
+  
+				# Extraction des caractéristiques
 				contour_features = extract_contour_features(image)
 				frequency_features = extract_frequency_features(image)
 				texture_features = extract_texture_features(image)
 				glcm_features = extract_glcm_features(image)
 				combined_features = np.concatenate([contour_features, frequency_features, texture_features, glcm_features])
+    
+				# Centralisation des données
 				features.append(combined_features)
 				labels.append(LABEL_MAP[category])
 
@@ -108,25 +145,38 @@ def random_forest():
 	scaler = StandardScaler()
 	X_scaled = scaler.fit_transform(X)
 
+	
 	# Réduction de dimensions
 	pca = PCA(min(100, X_scaled.shape[1]))
 	X_reduced = pca.fit_transform(X_scaled)
 
-	# Modèle Random Forest
+	# Random Forest
 	X_train, X_test, y_train, y_test = train_test_split(X_reduced, y, test_size=0.3, random_state=42)
 	clf = RandomForestClassifier(n_estimators=100, random_state=42)
+	#clf = KMeans(n_clusters=len(CATEGORIES), random_state=42)
 	clf.fit(X_train, y_train)
+ 
 
 	# Évaluation
 	y_pred = clf.predict(X_test)
 	cm = confusion_matrix(y_test, y_pred)
 	report = classification_report(y_test, y_pred)
+	
 
 	return scaler, pca, clf, cm, report
 
 
 # Prédiction d'une image #
 def predict_image_category(image_path, scaler, pca, clf):
+	"""
+	Affiche la catégorie de l'image donnée.
+
+	:param image_path: Le chemin conduisant à l'image.
+	:param scaler: Scaler utilisé pour normaliser les données.
+	:param pca: PCA utilisé pour réduire les dimensions.
+	:param clf: Modèle de Random Forest.
+	"""
+ 
 	# Charger l'image
 	image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 	image = alter_image(image)
@@ -149,7 +199,7 @@ def predict_image_category(image_path, scaler, pca, clf):
 	# Prédiction
 	predicted_label = clf.predict(combined_features_reduced)
 
-	# Afficher le résultat
+	# Résultat
 	predicted_category = [key for key, value in LABEL_MAP.items() if value == predicted_label[0]]
 	print(f"L'image est classée dans la catégorie : {predicted_category[0]}")
 
