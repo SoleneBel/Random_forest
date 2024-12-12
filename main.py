@@ -1,3 +1,4 @@
+from cProfile import label
 import os
 import cv2
 import numpy as np
@@ -19,7 +20,7 @@ from PIL import Image, ImageDraw
 # Constantes #
 # Chemins des dossiers/fichiers
 BASE_PATH = "./dataTest/"
-TARGET_PATH = "target.jpg"
+TARGET_PATH = "target.png"
 # On récupère les différentes catégories d'images à partir des noms des dossiers où elles sont stockées
 CATEGORIES = [folder for folder in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, folder))]
 LABEL_MAP = {category: idx for idx, category in enumerate(CATEGORIES)}
@@ -151,8 +152,11 @@ def random_forest():
 	X_reduced = pca.fit_transform(X_scaled)
 
 	# Random Forest
+	weights = {
+		LABEL_MAP['water']: 0.5
+	}
 	X_train, X_test, y_train, y_test = train_test_split(X_reduced, y, test_size=0.3, random_state=42)
-	clf = RandomForestClassifier(n_estimators=100, random_state=42)
+	clf = RandomForestClassifier(n_estimators=100, random_state=42, class_weight=weights)
 	#clf = KMeans(n_clusters=len(CATEGORIES), random_state=42)
 	clf.fit(X_train, y_train)
  
@@ -329,11 +333,11 @@ if __name__ == '__main__':
 	# Prédiction de l'image voulue
 	# predict_image_category(TARGET_PATH, scaler, pca, clf)
 
-	colorize_image_with_rectangles("test2.png", 20, 20, "test2_carre.png", scaler, pca, clf)
+	colorize_image_with_rectangles(TARGET_PATH, 20, 20, "result.png", scaler, pca, clf)
 
 	# Affichage des résultats
 	print_result(report)
 
-# Affichage des résultats
-print("\nMatrice de confusion:\n", confusion_matrix)
-print("\nRapport de classification:\n", report)
+	# Affichage des résultats
+	print("\nMatrice de confusion:\n", confusion_matrix)
+	print("\nRapport de classification:\n", report)
