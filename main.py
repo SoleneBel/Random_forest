@@ -1,4 +1,3 @@
-from cProfile import label
 import os
 import cv2
 import numpy as np
@@ -318,11 +317,11 @@ def colorize_image_with_rectangles(image_path, num_width, num_height, output_pat
 
 # Affichage résultat random forest #
 def print_result(report):
-	''' plt.figure(figsize=(8, 6))
+	plt.figure(figsize=(8, 6))
 	sns.heatmap(cm, annot=True, fmt="d", cmap="YlOrBr", xticklabels=CATEGORIES, yticklabels=CATEGORIES)
 	plt.xlabel('Prédictions')
 	plt.ylabel('Réalité')
-	plt.show() '''
+	plt.show()
 	print("\nRapport de classification:\n", report)
 
 
