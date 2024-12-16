@@ -72,11 +72,8 @@ python main.py
 ```bash
 python image_alteree.py
 ```
-4. Le script affichera les propriétés GLCM de l’image et leur impact visuel. Vous pouvez remplacer GLCM par le descripteur de votre choix pour visualiser son impact.
-
-## Exemple de résultat
-- **Matrice de confusion** montrant les performances du classificateur Random Forest.
-- **Superposition des catégories** sur l'image cible avec des couleurs distinctes pour chaque catégorie prédite.
+4. Le script affichera les propriétés GLCM de l’image et leur impact visuel.
+Vous pouvez remplacer GLCM par le descripteur de votre choix pour visualiser son impact.
 
 ## Auteurs
-Ce projet a été réalisé par Solène Bellissard et Ilirian Rexhepi dans le cadre du cours OSEC501.
+Ce projet a été réalisé par Solène Bellissard et Ilirian Rexhepi dans le cadre du cours OSEC502.
