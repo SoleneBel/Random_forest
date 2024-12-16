@@ -2,7 +2,6 @@
 
 ## Description
 Ce projet utilise un algorithme de classification Random Forest pour classer des images en fonction de cinq catégories prédéfinies :
-- **Cloudy**
 - **Desert**
 - **Green Area**
 - **Urban**
