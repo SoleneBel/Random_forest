@@ -45,9 +45,9 @@ Pour exécuter ce projet, les paquets suivants doivent être installés :
 ```
 .
 ├── main.py                  # Script principal pour l’entraînement et la classification des images
-├── image_alteree.py         # Script d’analyse des caractéristiques de l’image
-├── /dataTest/               # Dossier contenant les sous-dossiers d'images de chaque catégorie (cloudy, desert, etc.)
-├── /Images/                 # Dossier contenant les images à analyser
+├── image_alteree.py         # Script de visualisation de caractéristiques pouvant être utilisée dans le script principal
+├── /dataTest/               # Dossier contenant les sous-dossiers d'images pour chaque catégorie
+├── /Images/                 # Dossier contenant quelques images plus détaillées extraites à la main
 ├── target.png               # Image cible à classer
 ├── result.png               # Résultat de la superposition des catégories prédites sur l’image cible
 └── README.md                # Ce fichier
@@ -63,25 +63,20 @@ python main.py
 ```
 3. Le programme extraira les caractéristiques des images, effectuera l’entraînement du modèle Random Forest et affichera les résultats sous forme de matrice de confusion et de rapport de classification.
 4. Le programme colorisera l'image `target.png` et sauvegardera le résultat sous le nom `result.png`.
+5. Il est également possible de classer plus généralement une image dans une des classes en décommentant la ligne 333. 
 
 ### 2. **Visualisation des caractéristiques de l’image**
-1. Placez une image à analyser dans le dossier `/Images/`.
+1. Récupérez le chemin d'une image qui servira de support.
 2. Modifiez le chemin de l'image dans `image_alteree.py` (variable `image_path`).
 3. Exécutez le script :
 ```bash
 python image_alteree.py
 ```
-4. Le script affichera les propriétés GLCM de l’image et leur impact visuel.
+4. Le script affichera les propriétés GLCM de l’image et leur impact visuel. Vous pouvez remplacer GLCM par le descripteur de votre choix pour visualiser son impact.
 
 ## Exemple de résultat
 - **Matrice de confusion** montrant les performances du classificateur Random Forest.
 - **Superposition des catégories** sur l'image cible avec des couleurs distinctes pour chaque catégorie prédite.
-
-## Améliorations possibles
-- **Ajout d’autres descripteurs d’images** (par exemple, des descripteurs basés sur des caractéristiques de forme ou de couleur).
-- **Augmentation des données** pour rendre le modèle plus robuste.
-- **Optimisation du modèle Random Forest** (élévation du nombre d’estimations, recherche des meilleurs hyperparamètres).
-- **Visualisation des paramètres GLCM** sous forme de graphiques interactifs.
 
 ## Auteurs
 Ce projet a été réalisé par Solène Bellissard et Ilirian Rexhepi dans le cadre du cours OSEC501.
